@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kanz Mining 💎</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root { --primary: #0088cc; --accent: #00d1b2; --bg: #0f1216; --card: #1c2128; }
+        body { background: var(--bg); color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; padding-bottom: 80px; overflow-x: hidden; }
+        
+        .lang-switch { position: absolute; top: 15px; right: 15px; background: #222; border: 1px solid #444; color: #fff; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 0.85em; z-index: 1010; }
+        html[dir="rtl"] .lang-switch { right: auto; left: 15px; }
+
+        .card { background: var(--card); padding: 20px; border-radius: 20px; margin-top: 15px; border: 1px solid #30363d; position: relative; }
+        .balance { font-size: 2.8em; color: var(--accent); font-weight: bold; margin: 10px 0; }
+        .supply-bar { background: #333; height: 10px; border-radius: 10px; margin: 15px 0; overflow: hidden; position: relative; }
+        .supply-fill { background: var(--primary); height: 100%; width: 0%; transition: 1s; position: absolute; left: 0; }
+        html[dir="rtl"] .supply-fill { left: auto; right: 0; }
+        
+        button { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        button:disabled { background: #333 !important; opacity: 0.6; cursor: not-allowed; color: #aaa !important; }
+        
+        .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #161b22; display: flex; border-top: 1px solid #333; padding: 10px 0; z-index: 1000; }
+        .nav-item { flex: 1; font-size: 0.8em; color: #888; text-align: center; cursor: pointer; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+        .page { display: none; }
+        .page.active { display: block; }
+        #timer { color: #ffcc00; font-weight: bold; font-size: 1.2em; margin: 10px 0; }
+        .task-item { display: flex; justify-content: space-between; align-items: center; background: #0d1117; padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid #333; }
+        
+        .wallet-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #444; background: #0d1117; color: #fff; text-align: center; font-size: 0.9em; box-sizing: border-box; margin-top: 10px; }
+        .badge-soon { background: #ffcc00; color: #000; font-size: 0.75em; padding: 3px 8px; border-radius: 5px; font-weight: bold; margin-left: 5px; display: inline-block; vertical-align: middle; }
+
+        .level-badge { position: absolute; top: 15px; left: 15px; background: linear-gradient(135deg, #ffcc00, #ff9900); color: #000; font-size: 0.8em; padding: 5px 12px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 10px rgba(255,204,0,0.3); }
+        html[dir="rtl"] .level-badge { left: auto; right: 15px; }
+
+        .feature-box { background: #0d1117; padding: 12px; border-radius: 12px; border: 1px solid #222; margin-top: 10px; text-align: left; }
+        html[dir="rtl"] .feature-box { text-align: right; }
+        .feature-box strong { color: var(--accent); display: block; margin-bottom: 3px; }
+
+        .stat-counter { font-size: 1.8em; color: var(--accent); font-weight: bold; margin: 5px 0; }
+    </style>
+</head>
+<body>
+
+    <button class="lang-switch" onclick="toggleLanguage()">العربية</button>
+
+    <div id="miningPage" class="page active">
+        <h2 data-key="title_mining">Kanz Mining 💎</h2>
+        <div class="card">
+            <p style="font-size:0.8em; color: #aaa;" id="supplyTitleText" data-key="supply_text">Remaining Mining Pool (200M)</p>
+            <div class="supply-bar"><div class="supply-fill" id="supplyFill" style="width: 15%;"></div></div>
+            <div id="remainingSupply" style="font-size: 0.7em; color: #888;">200,000,000 / 200M</div>
+        </div>
+        <div class="card">
+            <div class="level-badge" id="levelBadge">Bronze Lvl 1</div>
+            <p data-key="your_balance">Your Current Balance</p>
+            <div class="balance" id="balance">0.00000</div>
+            <div id="statusText" style="color:#aaa;" data-key="status_ready">Ready to start mining</div>
+            <div id="timer"></div>
+        </div>
+        <div class="card" id="mineAction">
+            <button id="mineBtn" onclick="startMining()" data-key="btn_start_mine">🚀 Start Mining (6 Hours)</button>
+        </div>
+    </div>
+
+    <div id="tasksPage" class="page">
+        <h2 data-key="title_tasks">Tasks & Rewards 💰</h2>
+        <div class="card">
+            <div class="task-item">
+                <div style="text-align: left;" class="task-text-container">
+                    <strong data-key="task_follow">Follow Official Channel</strong><br>
+                    <small style="color: var(--accent);">+50.00 KANZ</small>
+                </div>
+                <button id="followTaskBtn" onclick="doTask('https://t.me/kanzcoin', 50, 'channelTaskDone')" style="width: auto; padding: 8px 15px; margin: 0;" data-key="btn_do">Do it</button>
+            </div>
+            
+            <div class="task-item">
+                <div style="text-align: left;" class="task-text-container">
+                    <strong data-key="task_group">Join Official Chat Group</strong><br>
+                    <small style="color: var(--accent);">+20.00 KANZ</small>
+                </div>
+                <button id="groupTaskBtn" onclick="doTask('https://t.me/+jSPRjHJXj941YmQ0', 20, 'groupTaskDone')" style="width: auto; padding: 8px 15px; margin: 0;" data-key="btn_do">Do it</button>
+            </div>
+
+            <div class="task-item">
+                <div style="text-align: left;" class="task-text-container">
+                    <strong data-key="task_invite">Invite a New Friend</strong><br>
+                    <small style="color: var(--accent);">+10.00 KANZ</small>
+                </div>
+                <button onclick="showPage('refPage')" style="width: auto; padding: 8px 15px; margin: 0;" data-key="btn_invite">Invite</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="refPage" class="page">
+        <h2 data-key="title_ref">Invite Friends 👥</h2>
+        
+        <div class="card" style="background: linear-gradient(135deg, #1c2128, #11161d);">
+            <p style="margin: 0; font-size: 0.9em; color: #aaa;" data-key="your_direct_refs">Your Direct Team (Level 1)</p>
+            <div class="stat-counter" id="directRefsCounter">0</div>
+            <small style="color: #888;" data-key="hierarchy_notice">Multi-level rewards: Earn on your friends and earn when your friends invite others!</small>
+        </div>
+
+        <div class="card">
+            <p data-key="ref_desc">Earn 10 coins for every friend who registers through you! And upgrade mining speed!</p>
+            <div id="refLink" style="background:#0d1117; padding:15px; border-radius:10px; font-size:0.8em; border:1px dashed #444; color:#58a6ff; word-break:break-all; margin: 10px 0;"></div>
+            <button onclick="shareToTelegram()" style="background: #0088cc; margin-bottom: 10px;" data-key="btn_share_tg">🚀 Share directly on Telegram</button>
+            <button onclick="copyRef()" data-key="btn_copy_ref">Copy Referral Link</button>
+        </div>
+    </div>
+
+    <div id="walletPage" class="page">
+        <h2><span data-key="title_wallet">Digital Wallet</span> <span class="badge-soon" data-key="soon">Soon</span></h2>
+        <div class="card">
+            <p data-key="wallet_desc">Link your wallet to withdraw your coins later when KANZ network launches.</p>
+            <input type="text" class="wallet-input" placeholder="0x... or TON Address" disabled />
+            <button disabled style="background: #333;" data-key="btn_save_wallet">Save Address (Soon)</button>
+        </div>
+
+        <div class="card" style="margin-top: 5px;">
+            <div class="feature-box">
+                <strong data-key="f1_title">💼 Micro-Freelancing Platform</strong>
+                <span data-key="f1_desc">A global ecosystem for exchanging services and freelance work with 0% commission when paying with KANZ token.</span>
+            </div>
+            <div class="feature-box">
+                <strong data-key="f2_title">🤖 AI Arbitration & Escrow</strong>
+                <span data-key="f2_desc">Secure smart contracts that guarantee the rights of buyer and seller, resolving disputes instantly without human bias.</span>
+            </div>
+            <div class="feature-box">
+                <strong data-key="f3_title">🔥 Auto-Deflationary Mechanism</strong>
+                <span data-key="f3_desc">Total maximum supply limited to 400 million coins only, and 50% of advertising profits are burned to boost the price periodically.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item active" onclick="showPage('miningPage')">⛏️<br><span data-key="nav_mine">Mining</span></div>
+        <div class="nav-item" onclick="showPage('tasksPage')">💰<br><span data-key="nav_tasks">Tasks</span></div>
+        <div class="nav-item" onclick="showPage('refPage')">👥<br><span data-key="nav_ref">Referral</span></div>
+        <div class="nav-item" onclick="showPage('walletPage')">👛<br><span data-key="nav_wallet">Wallet</span></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8SlGImM_hKtFZYNI0OVk1Cb...", 
+            authDomain: "kanz-a18f4.firebaseapp.com",
+            projectId: "kanz-a18f4",
+            appId: "1:334964206082:web:7cc4e0f26fba44262b151b"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const tg = window.Telegram.WebApp;
+        
+        const userId = tg.initDataUnsafe?.user?.id?.toString() || "browser_" + Math.floor(Math.random() * 10000000);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const referrerId = tg.initDataUnsafe?.start_param?.toString() || urlParams.get('start') || null;
+
+        const SIX_HOURS = 6 * 60 * 60 * 1000;
+        
+        let miningRate = 0.0001; 
+        let userBalance = 0;
+        let totalInvites = 0;
+        let isMiningPoolEmpty = false;
+
+        // تعيين اللغة الأساسية لتكون الإنجليزية عند فتح التطبيق
+        let currentLang = 'en';
+        const translations = {
+            ar: {
+                title_mining: "Kanz Mining 💎", supply_text: "مخزون التعدين المتبقي (200M)", loading: "جاري التحميل...", your_balance: "رصيدك الحالي", status_ready: "جاهز لبدء التعدين", btn_start_mine: "🚀 ابدأ التعدين (6 ساعات)", title_tasks: "المهام والمكافآت 💰", task_follow: "متابعة القناة الرسمية", task_group: "الانضمام لمجموعة النقاش الرسمية", task_invite: "دعوة صديق جديد", btn_do: "تنفيذ", btn_invite: "دعوة", title_ref: "دعوة الأصدقاء 👥", ref_desc: "اربح 10 عملات عن كل صديق يسجل من خلالك! وارفع مستوى تعدينك!", btn_share_tg: "🚀 شارك مباشرة في تليجرام", btn_copy_ref: "نسخ رابط الإحالة", title_wallet: "المحفظة الرقمية", soon: "قريباً", wallet_desc: "قم بربط محفظتك لتتمكن من سحب عملاتك لاحقاً عند إطلاق شبكة KANZ.", btn_save_wallet: "حفظ العنوان (قريباً)", nav_mine: "تعدين", nav_tasks: "مهام", nav_ref: "إحالة", nav_wallet: "المحفظة", alert_task: "تم تنفيذ المهمة بنجاح، وإضافة ", alert_coin: " عملة لرصيدك!", copied: "تم نسخ رابط الإحالة بنجاح!", already_done: "لقد قمت بتنفيذ هذه المهمة مسبقاً!", your_direct_refs: "فريقك المباشر (المستوى 1)", hierarchy_notice: "نظام الإحالة هرمي: تكسب على صديقك وتكسب عندما يدعو صديقك صديقاً آخر!", mining_ended: "🎉 تم اكتمال مرحلة التعدين بنجاح! انتظروا الـ Airdrop", mining_active: "⚡ عملية التعدين نشطة حالياً", status_mining_btn: "⏳ جاري التعدين..."
+            },
+            en: {
+                title_mining: "Kanz Mining 💎", supply_text: "Remaining Mining Pool (200M)", loading: "Loading...", your_balance: "Your Current Balance", status_ready: "Ready to start mining", btn_start_mine: "🚀 Start Mining (6 Hours)", title_tasks: "Tasks & Rewards 💰", task_follow: "Follow Official Channel", task_group: "Join Official Chat Group", task_invite: "Invite a New Friend", btn_do: "Do it", btn_invite: "Invite", title_ref: "Invite Friends 👥", ref_desc: "Earn 10 coins for every friend who registers through you! And upgrade mining speed!", btn_share_tg: "🚀 Share directly on Telegram", btn_copy_ref: "Copy Referral Link", title_wallet: "Digital Wallet", soon: "Soon", wallet_desc: "Link your wallet to withdraw your coins later when KANZ network launches.", btn_save_wallet: "Save Address (Soon)", nav_mine: "Mining", nav_tasks: "Tasks", nav_ref: "Referral", nav_wallet: "Wallet", alert_task: "Task completed successfully, added ", alert_coin: " coins to your balance!", copied: "Referral link copied successfully!", already_done: "You have already completed this task!", your_direct_refs: "Your Direct Team (Level 1)", hierarchy_notice: "Multi-level rewards: Earn on your friends and earn when your friends invite others!", mining_ended: "🎉 Mining Phase Completed! Stay tuned for Airdrop", mining_active: "⚡ Mining is currently active", status_mining_btn: "⏳ Mining..."
+            }
+        };
+
+        async function runAntiCheatSystem() {
+            const deviceFingerprint = btoa(navigator.userAgent + navigator.hardwareConcurrency);
+            const deviceRef = doc(db, "devices", deviceFingerprint);
+            const devSnap = await getDoc(deviceRef);
+            
+            if (devSnap.exists() && devSnap.data().registeredUser !== userId) {
+                console.log("Multi-account check trace");
+            } else if (!devSnap.exists()) {
+                await setDoc(deviceRef, { registeredUser: userId });
+            }
+        }
+
+        window.toggleLanguage = () => {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.lang = currentLang;
+            document.querySelector('.lang-switch').innerText = currentLang === 'ar' ? 'English' : 'العربية';
+            
+            document.querySelectorAll('[data-key]').forEach(elem => {
+                const key = elem.getAttribute('data-key');
+                if (translations[currentLang][key]) elem.innerText = translations[currentLang][key];
+            });
+            
+            document.querySelectorAll('.task-text-container').forEach(elem => {
+                elem.style.textAlign = currentLang === 'ar' ? 'right' : 'left';
+            });
+
+            const mineBtn = document.getElementById('mineBtn');
+            if (mineBtn.disabled && !isMiningPoolEmpty) {
+                mineBtn.innerText = translations[currentLang].status_mining_btn;
+                document.getElementById('statusText').innerText = translations[currentLang].mining_active;
+            }
+
+            if(isMiningPoolEmpty) {
+                mineBtn.innerText = translations[currentLang].mining_ended;
+            }
+            updateLevelUI();
+        };
+
+        window.showPage = (id) => {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            const indexMap = { 'miningPage': 0, 'tasksPage': 1, 'refPage': 2, 'walletPage': 3 };
+            document.querySelectorAll('.nav-item')[indexMap[id]].classList.add('active');
+        };
+
+        window.doTask = async (url, reward, fieldName) => {
+            window.open(url, "_blank");
+            try {
+                const userRef = doc(db, "users", userId);
+                const snap = await getDoc(userRef);
+                if (snap.exists() && snap.data()[fieldName]) {
+                    alert(translations[currentLang].already_done);
+                    return;
+                }
+                
+                userBalance += reward;
+                document.getElementById('balance').innerText = userBalance.toFixed(5);
+                
+                let updateData = { balance: userBalance };
+                updateData[fieldName] = true;
+                await setDoc(userRef, updateData, { merge: true });
+                
+                if(fieldName === 'channelTaskDone') document.getElementById('followTaskBtn').disabled = true;
+                if(fieldName === 'groupTaskDone') document.getElementById('groupTaskBtn').disabled = true;
+                
+                alert(translations[currentLang].alert_task + reward + translations[currentLang].alert_coin);
+            } catch (e) {
+                console.log("Error updating task reward: ", e);
+            }
+        };
+
+        window.copyRef = () => {
+            const linkText = document.getElementById('refLink').innerText;
+            navigator.clipboard.writeText(linkText).then(() => { alert(translations[currentLang].copied); });
+        };
+
+        window.shareToTelegram = () => {
+            const inviteLink = "https://t.me/kanzappmining_bot?start=" + userId;
+            const message = currentLang === 'ar' 
+                ? `انضم إلي في تعدين عملة KANZ مجاناً واكسب مكافآت فورية! 💎🚀\nرابط التسجيل:` 
+                : `Join me in mining KANZ token for free and earn instant rewards! 💎🚀\nRegistration link:`;
+            const tgShareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(message)}`;
+            window.open(tgShareUrl, "_blank");
+        };
+
+        window.startMining = async () => {
+            try {
+                const mineBtn = document.getElementById('mineBtn');
+                mineBtn.disabled = true;
+                mineBtn.innerText = translations[currentLang].status_mining_btn;
+
+                await setDoc(doc(db, "users", userId), { 
+                    miningStartTime: Date.now(), 
+                    isMining: true 
+                }, { merge: true });
+                
+                startLiveUIUpdate(Date.now());
+            } catch(e) {
+                document.getElementById('mineBtn').disabled = false;
+                document.getElementById('mineBtn').innerText = translations[currentLang].btn_start_mine;
+            }
+        };
+
+        function updateLevelUI() {
+            const lvlBadge = document.getElementById('levelBadge');
+            if (totalInvites >= 10) {
+                miningRate = 0.0002; 
+                lvlBadge.innerText = currentLang === 'ar' ? "الذهبي - مستوى 3" : "Gold Lvl 3";
+                lvlBadge.style.background = "linear-gradient(135deg, #d4af37, #aa7c11)";
+            } else if (totalInvites >= 3) {
+                miningRate = 0.00015; 
+                lvlBadge.innerText = currentLang === 'ar' ? "الفضي - مستوى 2" : "Silver Lvl 2";
+                lvlBadge.style.background = "linear-gradient(135deg, #b0c4de, #708090)";
+            } else {
+                miningRate = 0.0001; 
+                lvlBadge.innerText = currentLang === 'ar' ? "البرونزي - مستوى 1" : "Bronze Lvl 1";
+                lvlBadge.style.background = "linear-gradient(135deg, #cd7f32, #8b5a2b)";
+            }
+        }
+
+        function startLiveUIUpdate(startTime) {
+            document.getElementById('mineBtn').disabled = true;
+            document.getElementById('mineBtn').innerText = translations[currentLang].status_mining_btn;
+            document.getElementById('statusText').innerText = translations[currentLang].mining_active;
+            
+            const timerInterval = setInterval(() => {
+                const remaining = SIX_HOURS - (Date.now() - startTime);
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('mineBtn').disabled = false;
+                    document.getElementById('mineBtn').innerText = translations[currentLang].btn_start_mine;
+                    document.getElementById('statusText').innerText = translations[currentLang].status_ready;
+                    document.getElementById('timer').innerText = "";
+                    
+                    setDoc(doc(db, "users", userId), { isMining: false }, { merge: true });
+                    return;
+                }
+                const h = Math.floor(remaining / 3600000), m = Math.floor((remaining % 3600000) / 60000), s = Math.floor((remaining % 60000) / 1000);
+                document.getElementById('timer').innerText = `${h}h ${m}m ${s}s`;
+                const currentEarned = ((Date.now() - startTime) / 1000) * miningRate;
+                document.getElementById('balance').innerText = (userBalance + currentEarned).toFixed(5);
+            }, 1000);
+        }
+
+        async function loadData() {
+            try {
+                await runAntiCheatSystem(); 
+
+                const userRef = doc(db, "users", userId);
+                const snap = await getDoc(userRef);
+                
+                document.getElementById('mineBtn').disabled = false;
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if(data.isBanned) {
+                        document.body.innerHTML = "<h2 style='color:#ff4444; margin-top:50px;'>⚠️ This account has been permanently banned for violating security terms.</h2>";
+                        return;
+                    }
+
+                    userBalance = data.balance || 0;
+                    totalInvites = data.totalInvites || 0;
+                    
+                    document.getElementById('directRefsCounter').innerText = totalInvites;
+                    updateLevelUI(); 
+
+                    if(data.channelTaskDone) document.getElementById('followTaskBtn').disabled = true;
+                    if(data.groupTaskDone) document.getElementById('groupTaskBtn').disabled = true;
+
+                    if (data.isMining) {
+                        const elapsed = Date.now() - data.miningStartTime;
+                        if (elapsed < SIX_HOURS) {
+                            startLiveUIUpdate(data.miningStartTime);
+                        } else {
+                            await setDoc(userRef, { isMining: false }, { merge: true });
+                            document.getElementById('mineBtn').disabled = false;
+                        }
+                    }
+
+                } else {
+                    if (referrerId && referrerId !== userId) {
+                        try {
+                            const ref1Ref = doc(db, "users", referrerId);
+                            let parentReferrerId = null;
+
+                            await runTransaction(db, async (transaction) => {
+                                const ref1Snap = await transaction.get(ref1Ref);
+                                if (ref1Snap.exists()) {
+                                    const ref1Data = ref1Snap.data();
+                                    parentReferrerId = ref1Data.referredBy || null; 
+                                    transaction.update(ref1Ref, { 
+                                        balance: (ref1Data.balance || 0) + 10,
+                                        totalInvites: (ref1Data.totalInvites || 0) + 1
+                                    });
+                                }
+                            });
+
+                            if (parentReferrerId && parentReferrerId !== "none" && parentReferrerId !== userId) {
+                                const ref2Ref = doc(db, "users", parentReferrerId);
+                                await runTransaction(db, async (transaction) => {
+                                    const ref2Snap = await transaction.get(ref2Ref);
+                                    if (ref2Snap.exists()) {
+                                        const ref2Data = ref2Snap.data();
+                                        transaction.update(ref2Ref, { balance: (ref2Data.balance || 0) + 3 });
+                                    }
+                                });
+                            }
+                        } catch (refError) { console.log("Referral error"); }
+                    }
+
+                    await setDoc(userRef, { 
+                        balance: 0, 
+                        isMining: false, 
+                        channelTaskDone: false,
+                        groupTaskDone: false,
+                        totalInvites: 0,
+                        referredBy: referrerId || "none"
+                    }, { merge: true });
+                    
+                    updateLevelUI();
+                }
+            } catch(e) {
+                console.log("Firebase load error, running on local state");
+                document.getElementById('mineBtn').disabled = false;
+            }
+
+            document.getElementById('balance').innerText = userBalance.toFixed(5);
+            const currentSiteUrl = window.location.origin + window.location.pathname;
+            document.getElementById('refLink').innerText = currentSiteUrl + "?start=" + userId;
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
